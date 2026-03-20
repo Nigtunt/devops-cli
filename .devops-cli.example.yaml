@@ -1,0 +1,17 @@
+# DevOps CLI 配置文件示例
+# 复制此文件为 ~/.devops-cli.yaml 并填入真实值
+
+# API 密钥
+api_key: your_api_key_here
+
+# API 密钥
+api_secret: your_api_secret_here
+
+# API 基础 URL
+base_url: https://api.example.com
+
+# 可选：超时设置（秒）
+# timeout: 30
+
+# 可选：是否启用调试模式
+# debug: false
