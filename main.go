@@ -3,6 +3,7 @@ package main
 import (
 	"devops-cli/cmd"
 	"devops-cli/cmd/auth"
+	"devops-cli/cmd/debug"
 	"devops-cli/cmd/systemchange"
 	"devops-cli/cmd/task"
 	"devops-cli/cmd/userstory"
@@ -22,6 +23,7 @@ func main() {
 	cmd.RootCmd().AddCommand(userstory.NewUserStoryCmd())
 	cmd.RootCmd().AddCommand(systemchange.NewSystemChangeCmd())
 	cmd.RootCmd().AddCommand(task.NewTaskCmd())
+	cmd.RootCmd().AddCommand(debug.NewDebugCmd())
 	
 	// 添加 version 命令
 	cmd.RootCmd().AddCommand(&cobra.Command{

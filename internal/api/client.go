@@ -91,13 +91,25 @@ func (c *Client) doRequest(method, path string, body interface{}) ([]byte, error
 	req.Header.Set("Authorization", "Bearer "+c.maskToken(c.token))
 	req.Header.Set("User-Agent", "devops-cli/1.0")
 
-	// Debug 模式打印请求
+	// Debug 模式打印请求详情
 	if c.debug {
-		fmt.Fprintf(os.Stderr, "[DEBUG] %s %s\n", method, c.baseURL+path)
+		fmt.Fprintf(os.Stderr, "\n===== [DEBUG] Request =====\n")
+		fmt.Fprintf(os.Stderr, "%s %s\n", method, c.baseURL+path)
+		fmt.Fprintf(os.Stderr, "Headers:\n")
+		for key, values := range req.Header {
+			for _, value := range values {
+				// 脱敏 Authorization
+				if key == "Authorization" {
+					value = "Bearer " + c.maskToken(c.token)
+				}
+				fmt.Fprintf(os.Stderr, "  %s: %s\n", key, value)
+			}
+		}
 		if body != nil {
 			bodyJSON, _ := json.MarshalIndent(body, "", "  ")
-			fmt.Fprintf(os.Stderr, "[DEBUG] Request Body: %s\n", string(bodyJSON))
+			fmt.Fprintf(os.Stderr, "Body:\n%s\n", string(bodyJSON))
 		}
+		fmt.Fprintf(os.Stderr, "==========================\n\n")
 	}
 
 	// 发送请求
@@ -113,13 +125,20 @@ func (c *Client) doRequest(method, path string, body interface{}) ([]byte, error
 		return nil, fmt.Errorf("读取响应失败：%w", err)
 	}
 
-	// Debug 模式打印响应
+	// Debug 模式打印响应详情
 	if c.debug {
-		fmt.Fprintf(os.Stderr, "[DEBUG] Response Status: %d\n", resp.StatusCode)
-		if len(respBody) > 0 {
-			// 脱敏后打印
-			fmt.Fprintf(os.Stderr, "[DEBUG] Response Body: %s\n", c.maskSensitiveData(string(respBody)))
+		fmt.Fprintf(os.Stderr, "===== [DEBUG] Response =====\n")
+		fmt.Fprintf(os.Stderr, "Status: %d %s\n", resp.StatusCode, resp.Status)
+		fmt.Fprintf(os.Stderr, "Headers:\n")
+		for key, values := range resp.Header {
+			for _, value := range values {
+				fmt.Fprintf(os.Stderr, "  %s: %s\n", key, value)
+			}
 		}
+		if len(respBody) > 0 {
+			fmt.Fprintf(os.Stderr, "Body:\n%s\n", c.maskSensitiveData(string(respBody)))
+		}
+		fmt.Fprintf(os.Stderr, "===========================\n\n")
 	}
 
 	// 检查状态码
