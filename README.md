@@ -37,15 +37,49 @@ make package
 
 ## 配置
 
+### 方式一：使用 token 登录（推荐）
+
+```bash
+# 登录后 token 会自动保存到 ~/.devops-cli.yaml
+yx auth login --token <your_token>
+
+# 查看登录状态
+yx auth status
+
+# 登出
+yx auth logout
+```
+
+### 方式二：手动配置
+
 在 `~/.devops-cli.yaml` 创建配置文件:
 
 ```yaml
-api_key: your_api_key
-api_secret: your_api_secret
+api_token: your_token_here
 base_url: https://api.example.com
 ```
 
+### 方式三：环境变量
+
+```bash
+export DEVOPS_TOKEN=<your_token>
+export DEVOPS_API_URL=https://api.example.com
+```
+
 ## 使用
+
+### 认证
+
+```bash
+# 登录
+yx auth login --token <your_token>
+
+# 查看状态
+yx auth status
+
+# 登出
+yx auth logout
+```
 
 ### 用户故事
 

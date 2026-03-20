@@ -2,6 +2,7 @@ package main
 
 import (
 	"devops-cli/cmd"
+	"devops-cli/cmd/auth"
 	"devops-cli/cmd/systemchange"
 	"devops-cli/cmd/task"
 	"devops-cli/cmd/userstory"
@@ -17,6 +18,7 @@ var (
 
 func main() {
 	// 注册所有子命令
+	cmd.RootCmd().AddCommand(auth.NewAuthCmd())
 	cmd.RootCmd().AddCommand(userstory.NewUserStoryCmd())
 	cmd.RootCmd().AddCommand(systemchange.NewSystemChangeCmd())
 	cmd.RootCmd().AddCommand(task.NewTaskCmd())
