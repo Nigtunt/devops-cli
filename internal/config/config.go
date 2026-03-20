@@ -14,6 +14,7 @@ type Config struct {
 	APISecret string `yaml:"api_secret"`
 	APIToken  string `yaml:"api_token"`
 	BaseURL   string `yaml:"base_url"`
+	Debug     bool   `yaml:"debug"`
 }
 
 var cfg *Config

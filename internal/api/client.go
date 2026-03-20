@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"devops-cli/internal/config"
+	"devops-cli/internal/pkg/retry"
 )
 
 // Client API 客户端
@@ -16,6 +19,7 @@ type Client struct {
 	baseURL    string
 	token      string
 	httpClient *http.Client
+	debug      bool
 }
 
 // Response 通用 API 响应
@@ -41,7 +45,13 @@ func NewClient() *Client {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		debug: cfg.Debug,
 	}
+}
+
+// SetDebug 设置 debug 模式
+func (c *Client) SetDebug(debug bool) {
+	c.debug = debug
 }
 
 // SetToken 设置 token
@@ -49,8 +59,19 @@ func (c *Client) SetToken(token string) {
 	c.token = token
 }
 
-// request 发送 HTTP 请求
+// request 发送 HTTP 请求（带重试）
 func (c *Client) request(method, path string, body interface{}) ([]byte, error) {
+	return retry.Do(func() ([]byte, error) {
+		return c.doRequest(method, path, body)
+	}, retry.DefaultConfig, func(attempt int, err error) {
+		if c.debug {
+			fmt.Fprintf(os.Stderr, "[DEBUG] 重试 #%d: %v\n", attempt+1, err)
+		}
+	})
+}
+
+// doRequest 执行单次 HTTP 请求
+func (c *Client) doRequest(method, path string, body interface{}) ([]byte, error) {
 	var reqBody io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
@@ -67,8 +88,17 @@ func (c *Client) request(method, path string, body interface{}) ([]byte, error) 
 
 	// 设置请求头
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("Authorization", "Bearer "+c.maskToken(c.token))
 	req.Header.Set("User-Agent", "devops-cli/1.0")
+
+	// Debug 模式打印请求
+	if c.debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] %s %s\n", method, c.baseURL+path)
+		if body != nil {
+			bodyJSON, _ := json.MarshalIndent(body, "", "  ")
+			fmt.Fprintf(os.Stderr, "[DEBUG] Request Body: %s\n", string(bodyJSON))
+		}
+	}
 
 	// 发送请求
 	resp, err := c.httpClient.Do(req)
@@ -83,12 +113,39 @@ func (c *Client) request(method, path string, body interface{}) ([]byte, error) 
 		return nil, fmt.Errorf("读取响应失败：%w", err)
 	}
 
+	// Debug 模式打印响应
+	if c.debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] Response Status: %d\n", resp.StatusCode)
+		if len(respBody) > 0 {
+			// 脱敏后打印
+			fmt.Fprintf(os.Stderr, "[DEBUG] Response Body: %s\n", c.maskSensitiveData(string(respBody)))
+		}
+	}
+
 	// 检查状态码
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API 错误 (状态码 %d): %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("API 错误 (状态码 %d): %s", resp.StatusCode, c.maskSensitiveData(string(respBody)))
 	}
 
 	return respBody, nil
+}
+
+// maskToken 脱敏 token
+func (c *Client) maskToken(token string) string {
+	if len(token) <= 8 {
+		return "****"
+	}
+	return token[:4] + "****" + token[len(token)-4:]
+}
+
+// maskSensitiveData 脱敏敏感数据
+func (c *Client) maskSensitiveData(data string) string {
+	// 脱敏 token 字段
+	data = strings.ReplaceAll(data, c.token, "****")
+	if len(c.token) > 8 {
+		data = strings.ReplaceAll(data, c.token[:4]+"****"+c.token[len(c.token)-4:], "****")
+	}
+	return data
 }
 
 // ValidateToken 验证 token

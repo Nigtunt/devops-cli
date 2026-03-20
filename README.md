@@ -71,7 +71,7 @@ export DEVOPS_API_URL=https://api.example.com
 ### 认证
 
 ```bash
-# 登录
+# 登录（token 会加密存储）
 yx auth login --token <your_token>
 
 # 查看状态
@@ -79,6 +79,29 @@ yx auth status
 
 # 登出
 yx auth logout
+```
+
+### Debug 模式
+
+```bash
+# 启用 debug 模式（显示详细请求/响应，敏感信息自动脱敏）
+yx userstory create -t "标题" -d "描述" --debug
+
+# 或简写
+yx userstory create -t "标题" -d "描述" -D
+```
+
+### 输出格式化
+
+```bash
+# 表格输出（默认）
+yx userstory list
+
+# JSON 输出
+yx userstory list --format json
+
+# YAML 输出
+yx userstory list --format yaml
 ```
 
 ### 用户故事
